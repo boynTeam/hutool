@@ -92,13 +92,7 @@ public class SqlExecutor {
 	 * @since 4.1.4
 	 */
 	public static ResultSet callQuery(Connection conn, String sql, Object... params) throws SQLException {
-		CallableStatement proc = null;
-		try {
-			proc = StatementUtil.prepareCall(conn, sql, params);
-			return proc.executeQuery();
-		} finally {
-			DbUtil.close(proc);
-		}
+		return StatementUtil.prepareCall(conn, sql, params).executeQuery();
 	}
 
 	/**
@@ -162,7 +156,7 @@ public class SqlExecutor {
 	 * @throws SQLException SQL执行异常
 	 */
 	public static int[] executeBatch(Connection conn, String sql, Object[]... paramsBatch) throws SQLException {
-		return executeBatch(conn, sql, new ArrayIter<Object[]>(paramsBatch));
+		return executeBatch(conn, sql, new ArrayIter<>(paramsBatch));
 	}
 	
 	/**
@@ -198,7 +192,7 @@ public class SqlExecutor {
 	 * @since 4.5.6
 	 */
 	public static int[] executeBatch(Connection conn, String... sqls) throws SQLException {
-		return executeBatch(conn, new ArrayIter<String>(sqls));
+		return executeBatch(conn, new ArrayIter<>(sqls));
 	}
 	
 	/**

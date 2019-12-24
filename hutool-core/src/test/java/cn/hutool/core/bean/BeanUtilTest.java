@@ -4,11 +4,15 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.bean.copier.ValueProvider;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
+import lombok.Getter;
+import lombok.Setter;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -96,6 +100,20 @@ public class BeanUtilTest {
 		Assert.assertEquals(12, person.getAge());
 	}
 
+	/**
+	 * 测试public类型的字段注入是否成功
+	 */
+	@Test
+	public void mapToBeanTest2() {
+		HashMap<String, Object> map = CollUtil.newHashMap();
+		map.put("name", "Joe");
+		map.put("age", 12);
+
+		Person2 person = BeanUtil.mapToBean(map, Person2.class, CopyOptions.create());
+		Assert.assertEquals("Joe", person.name);
+		Assert.assertEquals(12, person.age);
+	}
+
 	@Test
 	public void beanToMapTest() {
 		SubPerson person = new SubPerson();
@@ -123,6 +141,23 @@ public class BeanUtilTest {
 
 		Map<String, Object> map = BeanUtil.beanToMap(person, true, true);
 		Assert.assertEquals("sub名字", map.get("sub_name"));
+	}
+
+	@Test
+	public void beanToMapWithLocalDateTimeTest() {
+		final LocalDateTime now = LocalDateTime.now();
+
+		SubPerson person = new SubPerson();
+		person.setAge(14);
+		person.setOpenid("11213232");
+		person.setName("测试A11");
+		person.setSubName("sub名字");
+		person.setDate(now);
+		person.setDate2(now.toLocalDate());
+
+		Map<String, Object> map = BeanUtil.beanToMap(person, false, true);
+		Assert.assertEquals(now, map.get("date"));
+		Assert.assertEquals(now.toLocalDate(), map.get("date2"));
 	}
 
 	@Test
@@ -162,12 +197,12 @@ public class BeanUtilTest {
 		// 测试boolean参数值isXXX形式
 		SubPerson p2 = new SubPerson();
 		BeanUtil.copyProperties(p1, p2);
-		Assert.assertTrue(p2.isSlow());
+		Assert.assertTrue(p2.getSlow());
 
 		// 测试boolean参数值非isXXX形式
 		SubPerson2 p3 = new SubPerson2();
 		BeanUtil.copyProperties(p1, p3);
-		Assert.assertTrue(p3.isSlow());
+		Assert.assertTrue(p3.getSlow());
 	}
 
 	@Test
@@ -180,7 +215,7 @@ public class BeanUtilTest {
 
 		Map<String, Object> map = MapUtil.newHashMap();
 		BeanUtil.copyProperties(p1, map);
-		Assert.assertTrue((Boolean) map.get("isSlow"));
+		Assert.assertTrue((Boolean) map.get("slow"));
 		Assert.assertEquals("测试", map.get("name"));
 		Assert.assertEquals("sub测试", map.get("subName"));
 	}
@@ -214,88 +249,38 @@ public class BeanUtilTest {
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
+	@Getter
+	@Setter
 	public static class SubPerson extends Person {
 
 		public static final String SUBNAME = "TEST";
 
 		private UUID id;
 		private String subName;
-		private Boolean isSlow;
-
-		public UUID getId() {
-			return id;
-		}
-
-		public void setId(UUID id) {
-			this.id = id;
-		}
-
-		public String getSubName() {
-			return subName;
-		}
-
-		public void setSubName(String subName) {
-			this.subName = subName;
-		}
-
-		public Boolean isSlow() {
-			return isSlow;
-		}
-
-		public void setSlow(Boolean isSlow) {
-			this.isSlow = isSlow;
-		}
+		private Boolean slow;
+		private LocalDateTime date;
+		private LocalDate date2;
 	}
 
+	@Getter
+	@Setter
 	public static class SubPerson2 extends Person {
 		private String subName;
 		// boolean参数值非isXXX形式
 		private Boolean slow;
-
-		public String getSubName() {
-			return subName;
-		}
-
-		public void setSubName(String subName) {
-			this.subName = subName;
-		}
-
-		public Boolean isSlow() {
-			return slow;
-		}
-
-		public void setSlow(Boolean isSlow) {
-			this.slow = isSlow;
-		}
 	}
 
+	@Getter
+	@Setter
 	public static class Person {
 		private String name;
 		private int age;
 		private String openid;
+	}
 
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public int getAge() {
-			return age;
-		}
-
-		public void setAge(int age) {
-			this.age = age;
-		}
-
-		public String getOpenid() {
-			return openid;
-		}
-
-		public void setOpenid(String openid) {
-			this.openid = openid;
-		}
+	public static class Person2 {
+		public String name;
+		public int age;
+		public String openid;
 	}
 }

@@ -181,7 +181,7 @@ public class CollUtil {
 	 * 例如：集合1：[a, b, c, c, c]，集合2：[a, b, c, c]<br>
 	 * 结果：[c]，此结果中只保留了一个<br>
 	 * 任意一个集合为空，返回另一个集合<br>
-	 * 两个集合无交集则返回两个集合的组合
+	 * 两个集合无差集则返回空集合
 	 *
 	 * @param <T>   集合元素类型
 	 * @param coll1 集合1
@@ -776,6 +776,7 @@ public class CollUtil {
 		} else if (collectionType.isAssignableFrom(LinkedHashSet.class)) {
 			list = new LinkedHashSet<>();
 		} else if (collectionType.isAssignableFrom(TreeSet.class)) {
+			//noinspection SortedCollectionWithNonComparableKeys
 			list = new TreeSet<>();
 		} else if (collectionType.isAssignableFrom(EnumSet.class)) {
 			list = (Collection<T>) EnumSet.noneOf((Class<Enum>) ClassUtil.getTypeArgument(collectionType));
@@ -1744,6 +1745,7 @@ public class CollUtil {
 	/**
 	 * 将指定对象全部加入到集合中<br>
 	 * 提供的对象如果为集合类型，会自动转换为目标元素类型<br>
+	 * 如果为String，支持类似于[1,2,3,4] 或者 1,2,3,4 这种格式
 	 *
 	 * @param <T>         元素类型
 	 * @param collection  被加入的集合
@@ -1772,7 +1774,8 @@ public class CollUtil {
 			iter = new ArrayIter<>(value);
 		} else if (value instanceof CharSequence) {
 			// String按照逗号分隔的列表对待
-			iter = StrUtil.splitTrim((CharSequence) value, CharUtil.COMMA).iterator();
+			final String ArrayStr = StrUtil.unWrap((CharSequence) value, '[', ']');
+			iter = StrUtil.splitTrim(ArrayStr, CharUtil.COMMA).iterator();
 		} else {
 			// 其它类型按照单一元素处理
 			iter = CollUtil.newArrayList(value).iterator();
@@ -1780,7 +1783,7 @@ public class CollUtil {
 
 		final ConverterRegistry convert = ConverterRegistry.getInstance();
 		while (iter.hasNext()) {
-			collection.add((T) convert.convert(elementType, iter.next()));
+			collection.add(convert.convert(elementType, iter.next()));
 		}
 
 		return collection;
@@ -2080,7 +2083,7 @@ public class CollUtil {
 			list.addAll(coll);
 		}
 		if (null != comparator) {
-			Collections.sort(list, comparator);
+			list.sort(comparator);
 		}
 
 		return page(pageNo, pageSize, list);
@@ -2128,7 +2131,7 @@ public class CollUtil {
 	 */
 	public static <T> List<T> sort(Collection<T> collection, Comparator<? super T> comparator) {
 		List<T> list = new ArrayList<>(collection);
-		Collections.sort(list, comparator);
+		list.sort(comparator);
 		return list;
 	}
 
@@ -2142,7 +2145,7 @@ public class CollUtil {
 	 * @see Collections#sort(List, Comparator)
 	 */
 	public static <T> List<T> sort(List<T> list, Comparator<? super T> c) {
-		Collections.sort(list, c);
+		list.sort(c);
 		return list;
 	}
 
@@ -2222,7 +2225,7 @@ public class CollUtil {
 	 */
 	public static <K, V> LinkedHashMap<K, V> sortToMap(Collection<Map.Entry<K, V>> entryCollection, Comparator<Map.Entry<K, V>> comparator) {
 		List<Map.Entry<K, V>> list = new LinkedList<>(entryCollection);
-		Collections.sort(list, comparator);
+		list.sort(comparator);
 
 		LinkedHashMap<K, V> result = new LinkedHashMap<>();
 		for (Map.Entry<K, V> entry : list) {
@@ -2256,7 +2259,7 @@ public class CollUtil {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <K, V> List<Entry<K, V>> sortEntryToList(Collection<Entry<K, V>> collection) {
 		List<Entry<K, V>> list = new LinkedList<>(collection);
-		Collections.sort(list, (o1, o2) -> {
+		list.sort((o1, o2) -> {
 			V v1 = o1.getValue();
 			V v2 = o2.getValue();
 
@@ -2366,7 +2369,7 @@ public class CollUtil {
 	 */
 	public static <T> List<List<T>> groupByField(Collection<T> collection, final String fieldName) {
 		return group(collection, new Hash<T>() {
-			private List<Object> fieldNameList = new ArrayList<>();
+			private final List<Object> fieldNameList = new ArrayList<>();
 
 			@Override
 			public int hash(T t) {
@@ -2415,7 +2418,7 @@ public class CollUtil {
 	/**
 	 * 设置或增加元素。当index小于List的长度时，替换指定位置的值，否则在尾部追加
 	 *
-	 * @param <T>  元素类型
+	 * @param <T>     元素类型
 	 * @param list    List列表
 	 * @param index   位置
 	 * @param element 新元素

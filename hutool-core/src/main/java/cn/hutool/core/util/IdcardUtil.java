@@ -4,11 +4,13 @@ import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.lang.PatternPool;
 import cn.hutool.core.lang.Validator;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 身份证相关工具类<br>
@@ -137,7 +139,7 @@ public class IdcardUtil {
 		if (idCard.length() != CHINA_ID_MIN_LENGTH) {
 			return null;
 		}
-		if (Validator.isNumber(idCard)) {
+		if (ReUtil.isMatch(PatternPool.NUMBERS, idCard)) {
 			// 获取出生年月日
 			String birthday = idCard.substring(6, 12);
 			Date birthDate = DateUtil.parse(birthday, "yyMMdd");
@@ -168,9 +170,9 @@ public class IdcardUtil {
 		int length = idCard.length();
 		switch (length) {
 			case 18:// 18位身份证
-				return isvalidCard18(idCard);
+				return isValidCard18(idCard);
 			case 15:// 15位身份证
-				return isvalidCard15(idCard);
+				return isValidCard15(idCard);
 			case 10: {// 10位身份证，港澳台地区
 				String[] cardval = isValidCard10(idCard);
 				return null != cardval && cardval[2].equals("true");
@@ -211,7 +213,7 @@ public class IdcardUtil {
 	 * @param idCard 待验证的身份证
 	 * @return 是否有效的18位身份证
 	 */
-	public static boolean isvalidCard18(String idCard) {
+	public static boolean isValidCard18(String idCard) {
 		if (CHINA_ID_MAX_LENGTH != idCard.length()) {
 			return false;
 		}
@@ -225,7 +227,7 @@ public class IdcardUtil {
 		String code17 = idCard.substring(0, 17);
 		// 第18位
 		char code18 = Character.toLowerCase(idCard.charAt(17));
-		if (Validator.isNumber(code17)) {
+		if (ReUtil.isMatch(PatternPool.NUMBERS, code17)) {
 			// 获取校验位
 			char val = getCheckCode18(code17);
 			return val == code18;
@@ -239,11 +241,11 @@ public class IdcardUtil {
 	 * @param idCard 身份编码
 	 * @return 是否合法
 	 */
-	public static boolean isvalidCard15(String idCard) {
+	public static boolean isValidCard15(String idCard) {
 		if (CHINA_ID_MIN_LENGTH != idCard.length()) {
 			return false;
 		}
-		if (Validator.isNumber(idCard)) {
+		if (ReUtil.isMatch(PatternPool.NUMBERS, idCard)) {
 			// 省份
 			String proCode = idCard.substring(0, 2);
 			if (null == cityCodes.get(proCode)) {
@@ -322,10 +324,10 @@ public class IdcardUtil {
 		final char[] chars = mid.toCharArray();
 		int iflag = 8;
 		for (char c : chars) {
-			sum += Integer.valueOf(String.valueOf(c)) * iflag;
+			sum += Integer.parseInt(String.valueOf(c)) * iflag;
 			iflag--;
 		}
-		return (sum % 10 == 0 ? 0 : (10 - sum % 10)) == Integer.valueOf(end);
+		return (sum % 10 == 0 ? 0 : (10 - sum % 10)) == Integer.parseInt(end);
 	}
 
 	/**
@@ -359,7 +361,7 @@ public class IdcardUtil {
 		char[] chars = mid.toCharArray();
 		int iflag = 7;
 		for (char c : chars) {
-			sum = sum + Integer.valueOf(String.valueOf(c)) * iflag;
+			sum = sum + Integer.parseInt(String.valueOf(c)) * iflag;
 			iflag--;
 		}
 		if ("A".equals(end.toUpperCase())) {
@@ -388,13 +390,15 @@ public class IdcardUtil {
 	 * @return 生日(yyyyMMdd)
 	 */
 	public static String getBirth(String idCard) {
+		Assert.notBlank(idCard, "id card must be not blank!");
 		final int len = idCard.length();
 		if (len < CHINA_ID_MIN_LENGTH) {
 			return null;
 		} else if (len == CHINA_ID_MIN_LENGTH) {
 			idCard = convert15To18(idCard);
 		}
-		return idCard.substring(6, 14);
+
+		return Objects.requireNonNull(idCard).substring(6, 14);
 	}
 
 	/**
@@ -443,7 +447,7 @@ public class IdcardUtil {
 		} else if (len == CHINA_ID_MIN_LENGTH) {
 			idCard = convert15To18(idCard);
 		}
-		return Short.valueOf(idCard.substring(6, 10));
+		return Short.valueOf(Objects.requireNonNull(idCard).substring(6, 10));
 	}
 
 	/**
@@ -459,7 +463,7 @@ public class IdcardUtil {
 		} else if (len == CHINA_ID_MIN_LENGTH) {
 			idCard = convert15To18(idCard);
 		}
-		return Short.valueOf(idCard.substring(10, 12));
+		return Short.valueOf(Objects.requireNonNull(idCard).substring(10, 12));
 	}
 
 	/**
@@ -475,7 +479,7 @@ public class IdcardUtil {
 		} else if (len == CHINA_ID_MIN_LENGTH) {
 			idCard = convert15To18(idCard);
 		}
-		return Short.valueOf(idCard.substring(12, 14));
+		return Short.valueOf(Objects.requireNonNull(idCard).substring(12, 14));
 	}
 
 	/**
@@ -494,7 +498,7 @@ public class IdcardUtil {
 		if (len == CHINA_ID_MIN_LENGTH) {
 			idCard = convert15To18(idCard);
 		}
-		char sCardChar = idCard.charAt(16);
+		char sCardChar = Objects.requireNonNull(idCard).charAt(16);
 		return (sCardChar % 2 != 0) ? 1 : 0;
 	}
 
@@ -585,7 +589,7 @@ public class IdcardUtil {
 		int iSum = 0;
 		if (power.length == iArr.length) {
 			for (int i = 0; i < iArr.length; i++) {
-				iSum += Integer.valueOf(String.valueOf(iArr[i])) * power[i];
+				iSum += Integer.parseInt(String.valueOf(iArr[i])) * power[i];
 			}
 		}
 		return iSum;
