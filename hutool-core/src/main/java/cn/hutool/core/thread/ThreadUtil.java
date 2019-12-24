@@ -101,13 +101,8 @@ public class ThreadUtil {
 	 * @param isDaemon 是否守护线程。守护线程会在主线程结束后自动结束
 	 * @return 执行的方法体
 	 */
-	public static Runnable excAsync(final Runnable runnable, boolean isDaemon) {
-		Thread thread = new Thread() {
-			@Override
-			public void run() {
-				runnable.run();
-			}
-		};
+	public static Runnable execAsync(final Runnable runnable, boolean isDaemon) {
+		Thread thread = new Thread(runnable);
 		thread.setDaemon(isDaemon);
 		thread.start();
 
@@ -437,6 +432,7 @@ public class ThreadUtil {
 	 * @param obj 对象所在线程
 	 * @since 4.5.6
 	 */
+	@SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
 	public static void sync(Object obj) {
 		synchronized (obj) {
 			try {

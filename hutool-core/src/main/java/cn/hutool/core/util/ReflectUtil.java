@@ -6,14 +6,17 @@ import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.lang.Filter;
 import cn.hutool.core.lang.SimpleCache;
+import cn.hutool.core.map.MapUtil;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -134,6 +137,22 @@ public class ReflectUtil {
 	}
 
 	/**
+	 * 获取指定类中字段名和字段对应的Map，包括其父类中的字段
+	 *
+	 * @param beanClass 类
+	 * @return 字段名和字段对应的Map
+	 * @since 5.0.7
+	 */
+	public static Map<String, Field> getFieldMap(Class<?> beanClass){
+		final Field[] fields = getFields(beanClass);
+		final HashMap<String, Field> map = MapUtil.newHashMap(fields.length);
+		for (Field field : fields) {
+			map.put(field.getName(), field);
+		}
+		return map;
+	}
+
+	/**
 	 * 获得一个类中所有字段列表，包括其父类中的字段
 	 *
 	 * @param beanClass 类
@@ -180,7 +199,7 @@ public class ReflectUtil {
 	/**
 	 * 获取字段值
 	 *
-	 * @param obj       对象
+	 * @param obj       对象，如果static字段，此处为类
 	 * @param fieldName 字段名
 	 * @return 字段值
 	 * @throws UtilException 包装IllegalAccessException异常
@@ -189,27 +208,44 @@ public class ReflectUtil {
 		if (null == obj || StrUtil.isBlank(fieldName)) {
 			return null;
 		}
-		return getFieldValue(obj, getField(obj.getClass(), fieldName));
+		return getFieldValue(obj, getField(obj instanceof Class ? (Class<?>)obj : obj.getClass(), fieldName));
+	}
+
+	/**
+	 * 获取静态字段值
+	 *
+	 * @param field 字段
+	 * @return 字段值
+	 * @throws UtilException 包装IllegalAccessException异常
+	 * @since 5.1.0
+	 */
+	public static Object getStaticFieldValue(Field field) throws UtilException {
+		return getFieldValue(null, field);
 	}
 
 	/**
 	 * 获取字段值
 	 *
-	 * @param obj   对象
+	 * @param obj   对象，static字段则此字段为null
 	 * @param field 字段
 	 * @return 字段值
 	 * @throws UtilException 包装IllegalAccessException异常
 	 */
 	public static Object getFieldValue(Object obj, Field field) throws UtilException {
-		if (null == obj || null == field) {
+		if (null == field) {
 			return null;
 		}
+		if(obj instanceof Class){
+			// 静态字段获取时对象为null
+			obj = null;
+		}
+
 		setAccessible(field);
 		Object result;
 		try {
 			result = field.get(obj);
 		} catch (IllegalAccessException e) {
-			throw new UtilException(e, "IllegalAccess for {}.{}", obj.getClass(), field.getName());
+			throw new UtilException(e, "IllegalAccess for {}.{}", field.getDeclaringClass(), field.getName());
 		}
 		return result;
 	}
@@ -217,13 +253,13 @@ public class ReflectUtil {
 	/**
 	 * 获取所有字段的值
 	 *
-	 * @param obj bean对象
+	 * @param obj bean对象，如果是static字段，此处为类class
 	 * @return 字段值数组
 	 * @since 4.1.17
 	 */
 	public static Object[] getFieldsValue(Object obj) {
 		if (null != obj) {
-			final Field[] fields = getFields(obj.getClass());
+			final Field[] fields = getFields(obj instanceof Class ? (Class<?>)obj : obj.getClass());
 			if (null != fields) {
 				final Object[] values = new Object[fields.length];
 				for (int i = 0; i < fields.length; i++) {
@@ -255,13 +291,12 @@ public class ReflectUtil {
 	/**
 	 * 设置字段值
 	 *
-	 * @param obj   对象
+	 * @param obj   对象，如果是static字段，此参数为null
 	 * @param field 字段
 	 * @param value 值，值类型必须与字段类型匹配，不会自动转换对象类型
 	 * @throws UtilException UtilException 包装IllegalAccessException异常
 	 */
 	public static void setFieldValue(Object obj, Field field, Object value) throws UtilException {
-		Assert.notNull(obj);
 		Assert.notNull(field, "Field in [{}] not exist !", obj.getClass().getName());
 
 		setAccessible(field);
@@ -350,12 +385,7 @@ public class ReflectUtil {
 	 */
 	public static List<Method> getPublicMethods(Class<?> clazz, Method... excludeMethods) {
 		final HashSet<Method> excludeMethodSet = CollectionUtil.newHashSet(excludeMethods);
-		return getPublicMethods(clazz, new Filter<Method>() {
-			@Override
-			public boolean accept(Method method) {
-				return false == excludeMethodSet.contains(method);
-			}
-		});
+		return getPublicMethods(clazz, method -> false == excludeMethodSet.contains(method));
 	}
 
 	/**
@@ -367,12 +397,7 @@ public class ReflectUtil {
 	 */
 	public static List<Method> getPublicMethods(Class<?> clazz, String... excludeMethodNames) {
 		final HashSet<String> excludeMethodNameSet = CollectionUtil.newHashSet(excludeMethodNames);
-		return getPublicMethods(clazz, new Filter<Method>() {
-			@Override
-			public boolean accept(Method method) {
-				return false == excludeMethodNameSet.contains(method.getName());
-			}
-		});
+		return getPublicMethods(clazz, method -> false == excludeMethodNameSet.contains(method.getName()));
 	}
 
 	/**
@@ -770,7 +795,7 @@ public class ReflectUtil {
 	 */
 	public static <T> T invokeWithCheck(Object obj, Method method, Object... args) throws UtilException {
 		final Class<?>[] types = method.getParameterTypes();
-		if (null != types && null != args) {
+		if (null != args) {
 			Assert.isTrue(args.length == types.length, "Params length [{}] is not fit for param length [{}] of method !", args.length, types.length);
 			Class<?> type;
 			for (int i = 0; i < args.length; i++) {

@@ -3,6 +3,8 @@ package cn.hutool.http.webservice;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
 
+import cn.hutool.core.util.XmlUtil;
+import cn.hutool.http.HtmlUtil;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -40,5 +42,4 @@ public class SoapClientTest {
 		SOAPMessage message = client.sendForMessage();
 		Console.log(message.getSOAPBody().getTextContent());
 	}
-	
 }

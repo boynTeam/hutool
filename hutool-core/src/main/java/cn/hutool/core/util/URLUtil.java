@@ -1,5 +1,13 @@
 package cn.hutool.core.util;
 
+import cn.hutool.core.exceptions.UtilException;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IORuntimeException;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.lang.Assert;
+import cn.hutool.core.net.URLEncoder;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -14,15 +22,6 @@ import java.net.URLDecoder;
 import java.net.URLStreamHandler;
 import java.nio.charset.Charset;
 import java.util.jar.JarFile;
-
-import cn.hutool.core.exceptions.UtilException;
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IORuntimeException;
-import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
-import cn.hutool.core.net.URLEncoder;
 
 /**
  * 统一资源定位符相关工具类
@@ -638,22 +637,22 @@ public class URLUtil {
 	 * </pre>
 	 *
 	 * @param url URL字符串
-	 * @param isEncodeBody 是否对URL中body部分的中文和特殊字符做转义（不包括http:和/）
+	 * @param isEncodePath 是否对URL中path部分的中文和特殊字符做转义（不包括 http:, /和域名部分）
 	 * @return 标准化后的URL字符串
 	 * @since 4.4.1
 	 */
-	public static String normalize(String url, boolean isEncodeBody) {
+	public static String normalize(String url, boolean isEncodePath) {
 		if (StrUtil.isBlank(url)) {
 			return url;
 		}
 		final int sepIndex = url.indexOf("://");
-		String pre;
+		String protocol;
 		String body;
 		if (sepIndex > 0) {
-			pre = StrUtil.subPre(url, sepIndex + 3);
+			protocol = StrUtil.subPre(url, sepIndex + 3);
 			body = StrUtil.subSuf(url, sepIndex + 3);
 		} else {
-			pre = "http://";
+			protocol = "http://";
 			body = url;
 		}
 
@@ -664,13 +663,24 @@ public class URLUtil {
 			body = StrUtil.subPre(body, paramsSepIndex);
 		}
 
-		// 去除开头的\或者/
-		body = body.replaceAll("^[\\\\/]+", StrUtil.EMPTY);
-		// 替换多个\或/为单个/
-		body = body.replace("\\", "/").replaceAll("//+", "/");
-		if (isEncodeBody) {
-			body = encode(body);
+		if(StrUtil.isNotEmpty(body)){
+			// 去除开头的\或者/
+			//noinspection ConstantConditions
+			body = body.replaceAll("^[\\\\/]+", StrUtil.EMPTY);
+			// 替换多个\或/为单个/
+			body = body.replace("\\", "/").replaceAll("//+", "/");
 		}
-		return pre + body + StrUtil.nullToEmpty(params);
+
+		final int pathSepIndex = StrUtil.indexOf(body, '/');
+		String domain = body;
+		String path = null;
+		if (pathSepIndex > 0) {
+			domain = StrUtil.subPre(body, pathSepIndex);
+			path = StrUtil.subSuf(body, pathSepIndex);
+		}
+		if (isEncodePath) {
+			path = encode(path);
+		}
+		return protocol + domain + StrUtil.nullToEmpty(path) + StrUtil.nullToEmpty(params);
 	}
 }

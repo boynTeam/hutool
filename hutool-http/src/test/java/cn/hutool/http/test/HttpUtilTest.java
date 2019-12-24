@@ -27,6 +27,18 @@ public class HttpUtilTest {
 
 	@Test
 	@Ignore
+	public void postTest2() {
+		// 某些接口对Accept头有特殊要求，此处自定义头
+		String result = HttpUtil
+				.createPost("http://cmp.ishanghome.com/cmp/v1/community/queryClusterCommunity")
+				.header(Header.ACCEPT, "*/*")
+				.execute()
+				.body();
+		Console.log(result);
+	}
+
+	@Test
+	@Ignore
 	public void getTest() {
 		String result1 = HttpUtil.get("http://photo.qzone.qq.com/fcgi-bin/fcg_list_album?uin=88888&outstyle=2", CharsetUtil.CHARSET_GBK);
 		Console.log(result1);
@@ -59,7 +71,7 @@ public class HttpUtilTest {
 		FileUtil.writeBytes(str, "f:/test/2D.jpg");
 		Console.log(str);
 	}
-	
+
 	@Test
 	@Ignore
 	public void get12306Test() {
@@ -107,7 +119,7 @@ public class HttpUtilTest {
 		String paramsStr = "uuuu=0&a=b&c=3Ddsssss555555";
 		Map<String, List<String>> map = HttpUtil.decodeParams(paramsStr, CharsetUtil.UTF_8);
 
-		String encodedParams = HttpUtil.toParams((Map<String, List<String>>) map);
+		String encodedParams = HttpUtil.toParams(map);
 		Assert.assertEquals(paramsStr, encodedParams);
 	}
 

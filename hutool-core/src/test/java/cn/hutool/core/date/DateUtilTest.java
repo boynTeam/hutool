@@ -2,6 +2,7 @@ package cn.hutool.core.date;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.BetweenFormater.Level;
+import cn.hutool.core.lang.Console;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -85,7 +87,7 @@ public class DateUtilTest {
 	public void beginAndWeedTest() {
 		String dateStr = "2017-03-01 22:33:23";
 		DateTime date = DateUtil.parse(dateStr);
-		date.setFirstDayOfWeek(Week.MONDAY);
+		Objects.requireNonNull(date).setFirstDayOfWeek(Week.MONDAY);
 
 		// 一周的开始
 		Date beginOfWeek = DateUtil.beginOfWeek(date);
@@ -296,6 +298,7 @@ public class DateUtilTest {
 		Assert.assertEquals("20190321", ymd);
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	@Test
 	public void parseTest5() {
 		// 测试时间解析
@@ -322,6 +325,7 @@ public class DateUtilTest {
 
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	@Test
 	public void parseTest6() {
 		String str = "Tue Jun 4 16:25:15 +0800 2019";
@@ -336,6 +340,7 @@ public class DateUtilTest {
 		Assert.assertEquals("2019-06-01 19:45:43", dateTime.toString());
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	@Test
 	public void parseAndOffsetTest() {
 		// 检查UTC时间偏移是否准确
@@ -423,6 +428,7 @@ public class DateUtilTest {
 		Assert.assertEquals(dt1, dt2);
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	@Test
 	public void parseUTCTest() {
 		String dateStr1 = "2018-09-13T05:34:31Z";
@@ -483,6 +489,7 @@ public class DateUtilTest {
 		Assert.assertEquals("2018-09-13 13:34:39.999", dateStr);
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	@Test
 	public void parseCSTTest(){
 		String dateStr = "Wed Sep 16 11:26:23 CST 2009";
@@ -493,6 +500,7 @@ public class DateUtilTest {
 		Assert.assertEquals("2009-09-17 01:26:23", dateTime.toString());
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	@Test
 	public void parseJDkTest() {
 		String dateStr = "Thu May 16 17:57:18 GMT+08:00 2019";
@@ -615,5 +623,30 @@ public class DateUtilTest {
 		LocalDateTime localDateTime = LocalDateTime.parse("2017-05-06T08:30:00", DateTimeFormatter.ISO_DATE_TIME);
 		DateTime date = DateUtil.date(localDateTime);
 		Assert.assertEquals("2017-05-06 08:30:00", date.toString());
+	}
+
+	@Test
+	public void dateTest2(){
+		// 测试负数日期
+		long dateLong = -1497600000;
+		final DateTime date = DateUtil.date(dateLong);
+		Assert.assertEquals("1969-12-15 00:00:00", date.toString());
+	}
+
+	@Test
+	public void ageTest(){
+		String d1 = "2000-02-29";
+		String d2 = "2018-02-28";
+		final int age = DateUtil.age(DateUtil.parseDate(d1), DateUtil.parseDate(d2));
+		Assert.assertEquals(18, age);
+	}
+
+	@Test
+	public void isExpiredTest(){
+		DateTime startDate = DateUtil.parse("2019-12-01 17:02:30");
+		DateTime endDate = DateUtil.parse("2019-12-02 17:02:30");
+		int length = 3;
+		boolean expired = DateUtil.isExpired(startDate, DateField.DAY_OF_YEAR, length, endDate);
+		Assert.assertTrue(expired);
 	}
 }

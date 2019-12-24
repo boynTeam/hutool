@@ -1,7 +1,6 @@
 package cn.hutool.core.convert;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.Console;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,6 +19,18 @@ public class DateConvertTest {
 		long timeLong = DateUtil.date().getTime();
 		Date value2 = Convert.toDate(timeLong);
 		Assert.assertEquals(timeLong, value2.getTime());
+	}
+
+	@Test
+	public void toDateFromIntTest() {
+		int dateLong = -1497600000;
+		Date value = Convert.toDate(dateLong);
+		Assert.assertNotNull(value);
+		Assert.assertEquals("Mon Dec 15 00:00:00 CST 1969", value.toString());
+
+		final java.sql.Date sqlDate = Convert.convert(java.sql.Date.class, dateLong);
+		Assert.assertNotNull(sqlDate);
+		Assert.assertEquals("1969-12-15", sqlDate.toString());
 	}
 
 	@Test
